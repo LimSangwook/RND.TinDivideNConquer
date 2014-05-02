@@ -19,6 +19,7 @@ const BOOL RANDON_POINT = TRUE;
 // DATA_NUM 갯수만큼의 Point Create
 real* _GetRandomPoints(int DATA_NUM);
 void DisplayFaces(int nCountOfTrangle, int *faces, real* pt);
+void SaveWKT(int nCountOfTrangle, int *faces, real* pt, CString filePath);
 
 int main(int argc, char **argv) {
     int DATA_NUM = 10000;
@@ -45,7 +46,8 @@ int main(int argc, char **argv) {
     std::cout << "count Trangle : " << nCountOfTrangle << std::endl;
 	std::cout << "Make Tin Time : " << (double)(TinClock - LoadingClock)/CLOCKS_PER_SEC << "초" << std::endl;
 
-	DisplayFaces(nCountOfTrangle, faces, pt);
+	//DisplayFaces(nCountOfTrangle, faces, pt);
+	SaveWKT(nCountOfTrangle, faces, pt, "D:\\work\\Polygons.txt");
 
 	int l;
 	std::cin >> l;
@@ -105,7 +107,23 @@ void DisplayFaces(int nCountOfTrangle, int *faces, real* pt)
 {
 	int startIndex = 0;
 	startIndex += faces[startIndex] + 1;
-	std::ofstream SaveFile("D:\\work\\Polygons.txt");
+	for (int j = 1 ; j < nCountOfTrangle ; j++) {
+		std::cout << std::endl;
+		std::cout << "###################### Face : " << j << std::endl;
+		std::cout << "Count of Points : " << faces[startIndex] << std::endl;
+		std::cout << "Point Index : " ;
+
+		for (int i = 0 ; i < faces[startIndex] ; i++) {
+		  std::cout << faces[startIndex + i + 1] << "  ";
+		}
+	}
+}
+
+void SaveWKT(int nCountOfTrangle, int *faces, real* pt, CString filePath)
+{
+	int startIndex = 0;
+	startIndex += faces[startIndex] + 1;
+	std::ofstream SaveFile(filePath.GetBuffer(0));
 	for (int j = 1 ; j < nCountOfTrangle ; j++) {
 		//std::cout << std::endl;
 		//std::cout << "###################### Face : " << j << std::endl;
