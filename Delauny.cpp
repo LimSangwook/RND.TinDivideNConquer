@@ -25,20 +25,13 @@ static real det3( mat3_t *m )
 * allocate a point
 */
 
-static point2d_t* point_alloc(int i, real x, real y)
+static point2d_t* point_alloc()
 {
 	point2d_t*	p;
 
 	p	= (point2d_t*)malloc(sizeof(point2d_t));
 	assert( p != NULL );
 	memset(p, 0, sizeof(point2d_t));
-
-	p->idx	= i;
-	p->x	= x;
-	p->y	= y;
-	if (x == 0 && y== 1){
-		x= 0;
-	}
 
 	return p;
 }
@@ -621,9 +614,6 @@ static halfedge_t* del_valid_left( halfedge_t* b )
 		/* as long as the 4 points belong to the same circle, do the cleaning */
 		while( v != d && in_circle(g, d, u, v) == INSIDE	)
 		{
-			int k1 = in_circle(g, d, u, v);
-			int k2 = in_circle2(g, d, u, v);
-
 			c	= b->sigma;
 			du	= b->sigma->alpha;
 			del_remove_halfedge(b);
@@ -633,8 +623,8 @@ static halfedge_t* del_valid_left( halfedge_t* b )
 		}
 		if( v != d && in_circle(g, d, u, v) == ON_CIRCLE )
 		{
-			du	= du->amgis;
-			del_remove_halfedge(b);
+			//du	= du->amgis;
+			//del_remove_halfedge(b);
 		}
 	} else	/* treat the case where the 3 points are colinear */
 		du		= dg;
@@ -674,8 +664,8 @@ static halfedge_t* del_valid_right( halfedge_t *b )
 		if( v != g && in_circle(g, d, u, v) == ON_CIRCLE )
 
 		{
-			du	= du->sigma;
-			del_remove_halfedge(b);
+			//du	= du->sigma;
+			//del_remove_halfedge(b);
 		}
 	} else
 		du	= dd;
@@ -718,6 +708,27 @@ static halfedge_t* del_valid_link( halfedge_t *b )
 				d_p = d;
 				dd	= b->alpha;
 			}
+		} else {
+			//* create the 2 halfedges */
+			new_gd	= halfedge_alloc();
+			new_dd	= halfedge_alloc();
+
+			//* setup new_gd and new_dd */
+
+			new_gd->vertex	= gd->vertex;
+			new_gd->alpha	= new_dd;
+			new_gd->amgis	= gd;
+			new_gd->sigma	= gd->sigma;
+			gd->sigma->amgis	= new_gd;
+			gd->sigma		= new_gd;
+
+			new_dd->vertex	= b->alpha->vertex;
+			new_dd->alpha	= new_gd;
+			new_dd->amgis	= b->alpha->amgis;
+			b->alpha->amgis->sigma	= new_dd;
+			new_dd->sigma	= b->alpha;
+			b->alpha->amgis		= new_dd;
+			return new_gd;
 		}
 	}
 
@@ -962,19 +973,24 @@ int delaunay2d(real *points, int num_points, int **faces)
 	delaunay_t	del;
 	int			i, j, fbuff_size = 0;
 
+	int cntFourPTFace = 0;
+
 	/* allocate the points */
 	del.points	= (point2d_t**)malloc(num_points * sizeof(point2d_t*));
 	assert( del.points != NULL );
 	memset(del.points, 0, num_points * sizeof(point2d_t*));
-
+	
 	/* copy the points */
 	for( i = 0; i < num_points; i++ )
 	{
-		del.points[i]		= point_alloc(i, points[i * 2], points[i * 2 + 1]);
+		del.points[i]		= point_alloc();
+		del.points[i]->idx	= i;
+		del.points[i]->x	= points[i * 2];
+		del.points[i]->y	= points[i * 2 + 1];
 	}
 
 	qsort(del.points, num_points, sizeof(point2d_t*), cmp_points);
-
+	
 	if( num_points >= 3 )
 	{
 		del_divide_and_conquer( &del, 0, num_points - 1 );
@@ -988,32 +1004,34 @@ int delaunay2d(real *points, int num_points, int **faces)
 		(*faces) = (int*)malloc(sizeof(int) * fbuff_size);
 		if ((*faces) == NULL) {
 			std::cout << "Faces Memory Alloc Error!!! size : " << (sizeof(int) * fbuff_size) << std::endl;
-		} else {
-			j = 0;
-			for( i = 0; i < del.num_faces; i++ )
-			{
-				halfedge_t	*curr;
+		} 
+		j = 0;
+		for( i = 0; i < del.num_faces; i++ )
+		{
+			halfedge_t	*curr;
 
-				(*faces)[j]	= del.faces[i].num_verts;
+			(*faces)[j]	= del.faces[i].num_verts;
+			j++;
+
+			curr	= del.faces[i].he;
+			do {
+				(*faces)[j]	= curr->vertex->idx;
 				j++;
-
-				curr	= del.faces[i].he;
-				do {
-					(*faces)[j]	= curr->vertex->idx;
-					j++;
-					curr	= curr->alpha->amgis;
-				} while( curr != del.faces[i].he );
+				curr	= curr->alpha->amgis;
+			} while( curr != del.faces[i].he );
+			if (i != 0 && del.faces[i].num_verts > 3) {
+				cntFourPTFace++;
 			}
-
-	//		del_free_halfedges( &del );
-
-			free(del.faces);
 		}
+
+		del_free_halfedges( &del );
+
+		free(del.faces);
 		for( i = 0; i < num_points; i++ )
 			point_free(del.points[i]);
 
 		free(del.points);
 	}
 
-	return del.num_faces;
+	return del.num_faces;// + cntFourPTFace;
 }
