@@ -14,7 +14,7 @@
 #include <fstream>
 
 #include "Delaunay.h"
-const BOOL RANDON_POINT = TRUE;
+const BOOL RANDON_POINT = FALSE;
 
 // DATA_NUM 갯수만큼의 Point Create
 real* _GetRandomPoints(int DATA_NUM);
@@ -22,7 +22,7 @@ void DisplayFaces(int nCountOfTrangle, int *faces, real* pt);
 void SaveWKT(int nCountOfTrangle, int *faces, real* pt, CString filePath);
 
 int main(int argc, char **argv) {
-    int DATA_NUM = 10000;
+    int DATA_NUM = 100000;
 
 	////////////////
 	// Time Check
@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
     int nCountOfTrangle = delaunay2d(pt, DATA_NUM, &faces);
 	TinClock = clock();
 	// Display
-    std::cout << "count Trangle : " << nCountOfTrangle << std::endl;
+    std::cout << "count Trangle : " << nCountOfTrangle - 1 << std::endl;
 	std::cout << "Make Tin Time : " << (double)(TinClock - LoadingClock)/CLOCKS_PER_SEC << "초" << std::endl;
 
 	//DisplayFaces(nCountOfTrangle, faces, pt);
-	SaveWKT(nCountOfTrangle, faces, pt, "D:\\work\\Polygons.txt");
+	//SaveWKT(nCountOfTrangle, faces, pt, "D:\\work\\Polygons.txt");
 
 	int l;
 	std::cin >> l;
@@ -65,7 +65,7 @@ real* _GetRandomPoints(int DATA_NUM)
       int idx = 0;
       
       for (int i = 0 ; i < sq * 10 + 1 ; i += 10) {
-	  for(int j = 0 ; j < sq * 10 + 1 ; j += 10){
+	  for(int j = 0 ; j < sq * 10 + 1; j += 10){
 	      real x = (real)i;
 	      real y = (real)j;
 	      pt[idx*2] = x;// + k/10.0;
@@ -106,8 +106,8 @@ real* _GetRandomPoints(int DATA_NUM)
 void DisplayFaces(int nCountOfTrangle, int *faces, real* pt)
 {
 	int startIndex = 0;
-	startIndex += faces[startIndex] + 1;
-	for (int j = 1 ; j < nCountOfTrangle ; j++) {
+	
+	for (int j = 0 ; j < nCountOfTrangle ; j++) {
 		std::cout << std::endl;
 		std::cout << "###################### Face : " << j << std::endl;
 		std::cout << "Count of Points : " << faces[startIndex] << std::endl;
@@ -116,6 +116,7 @@ void DisplayFaces(int nCountOfTrangle, int *faces, real* pt)
 		for (int i = 0 ; i < faces[startIndex] ; i++) {
 		  std::cout << faces[startIndex + i + 1] << "  ";
 		}
+		startIndex += faces[startIndex] + 1;
 	}
 }
 
